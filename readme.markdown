@@ -1,3 +1,6 @@
+Informations
+---------------------
+
 Pour installer grunt de manière globale avec node.js
 npm install -g grunt-cli
 
@@ -28,15 +31,14 @@ Shortcut
 
 à faire
 - grunt-githooks
-- créer / copier un dossier
-- grunt-newer
 - jsdoc
 - grunt-contrib-requirejs
 - css lint
 - php lint
-- jsonlint
-- grunt-html-validation
 - grunt-bump
 - grunt-shell, grunt-exec
 - grunt-markdown
 - grunt-git
+
+x grunt-html-validation
+x jsonlint

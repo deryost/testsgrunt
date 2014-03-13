@@ -1,6 +1,7 @@
 {
 	"sitename": "Nom du site",
 	"livereload": false,
+	"buildFolder" : "build",
 	"img": {
 		"src": "src/img/",
 		"build": "build/img/"
@@ -19,6 +20,6 @@
 	,
 	"html": {
 		"src": "src/",
-		"build": "build/html/"
+		"build": "build/"
 	}
 }

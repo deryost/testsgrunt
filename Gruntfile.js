@@ -65,6 +65,14 @@
 						spawn: false,
 						livereload: true
 					}
+				},
+				html: {
+					files: ['<%= cfg.html.src %>/*.html'],
+					tasks: ['html'],
+					options: {
+						spawn: false,
+						livereload: true
+					}
 				}
 			},
 			imagemin: {
@@ -102,7 +110,27 @@
 				dist: {
 					src: ["<%= cfg.js.build %>", "<%= cfg.css.build %>", "<%= cfg.img.build %>", "<%= cfg.html.build %>"]
 				}
-			}
+			},
+			jsonlint: {
+				sample: {
+					src: ["package.json", 'configs/*.json']
+				}
+			},
+			bump: {
+				options: {
+					files: ['package.json'],
+					updateConfigs: [],
+					commit: true,
+					commitMessage: 'Release v%VERSION%',
+					commitFiles: ['-a'], // 'package.json', '-a' for all files
+					createTag: true,
+					tagName: 'v%VERSION%',
+					tagMessage: 'Version %VERSION%',
+					push: false,
+					//pushTo: 'upstream',
+					gitDescribeOptions: '--tags --always --abbrev=1 --dirty=-d' // options to use with '$ git describe'
+				}
+			}			
 		});
 
 
@@ -113,6 +141,8 @@
 		grunt.registerTask('css', ['less']); //, 'replace'
 		grunt.registerTask('img', ['imagemin']);
 		grunt.registerTask('html', ['validation', 'htmlmin']);
+
+		grunt.registerTask('json', ['jsonlint']);
 		
 		grunt.registerTask('show-cfg', ['show-config:cfg']);
 
