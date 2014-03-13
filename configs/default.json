@@ -1,4 +1,24 @@
 {
-  "sitename": "Nom du site",
-  "livereload": false
+	"sitename": "Nom du site",
+	"livereload": false,
+	"img": {
+		"src": "src/img/",
+		"build": "build/img/"
+	},
+	"less": {
+		"src": "src/less/"
+	},
+	"css": {
+		"src": "src/css/",
+		"build": "build/css/"
+	},
+	"js": {
+		"src": "src/js/",
+		"build": "build/js/"
+	}
+	,
+	"html": {
+		"src": "src/",
+		"build": "build/html/"
+	}
 }

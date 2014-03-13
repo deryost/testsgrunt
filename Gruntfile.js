@@ -5,6 +5,7 @@
 
 		grunt.initConfig({
 			pkg : grunt.file.readJSON('package.json'),
+			cfg: createConfig(),
 			uglify: {
 				dist: {
 					options:{
@@ -13,7 +14,7 @@
 						sourceMap: true
 					},
 					files: {
-						'js/min.js': ['src/js/vendor/jquery*.js', 'src/js/main.js', 'src/js/lib.js', 'src/js/plugins.js']
+						'<%= cfg.js.build %>min.js': ['<%= cfg.js.src %>vendor/jquery*.js', '<%= cfg.js.src %>main.js', '<%= cfg.js.src %>lib.js', '<%= cfg.js.src %>plugins.js']
 					}
 				}
 			},
@@ -24,27 +25,25 @@
 						'validthis': true,
 						'strict': true
 					},
-					src: ['Gruntfile.js', 'src/js/**/*.js', '!src/js/vendor/*.js'],
+					src: ['Gruntfile.js', '<%= cfg.js.src %>**/*.js', '!<%= cfg.js.src %>vendor/*.js'],
 				}
 			},
 			less: {
 				dist: {
 					options: {
-						//paths: ["assets/css"],
-						//report: 'gzip',
 						compress: true,
 						sourceMap: true,
-						sourceMapFilename: 'css/main.map',
+						sourceMapFilename: '<%= cfg.css.build %>main.map',
 						sourceMapRootpath: '/'
 					},
 					files: {
-						"css/main.css": "src/less/main.less"
+						"<%= cfg.css.build %>main.css": "<%= cfg.less.src %>main.less"
 					}
 				}
 			},
 			watch: {
 				js: {
-					files: ['src/js/*.js'],
+					files: ['<%= cfg.js.src %>*.js'],
 					tasks: ['js'],
 					options: {
 						spawn: false,
@@ -52,7 +51,7 @@
 					}
 				},
 				css: {
-					files: ['src/less/*.less'],
+					files: ['<%= cfg.less.src %>*.less'],
 					tasks: ['css'],
 					options: {
 						spawn: false,
@@ -60,7 +59,7 @@
 					}
 				},
 				img: {
-					files: ['**/*.{png,jpg,gif}'],
+					files: ['<%= cfg.img.src %>/*.{png,jpg,gif}'],
 					tasks: ['img'],
 					options: {
 						spawn: false,
@@ -72,46 +71,60 @@
 				dist: {
 					files: [{
 						expand: true, // Enable dynamic expansion
-						cwd: 'src/img/', // Src matches are relative to this path
+						cwd: '<%= cfg.img.src %>', // Src matches are relative to this path
 						src: ['**/*.{png,jpg,gif}'], // Actual patterns to match
-						dest: 'img/' // Destination path prefix
+						dest: '<%= cfg.img.build %>' // Destination path prefix
 					}]
+				}
+			},
+			validation: {
+				options: {
+					reset: grunt.option('reset') || false,
+					stoponerror: true,
+					relaxerror: ["Bad value X-UA-Compatible for attribute http-equiv on element meta."] //ignores these errors
+				},
+				files: {
+					src: ["<%= cfg.html.src %>index.html"]
+				}
+			},
+			htmlmin: {
+				dist: {
+					options: {
+						removeComments: true,
+						collapseWhitespace: true
+					},
+					files: {
+						'<%= cfg.html.build %>index.html': '<%= cfg.html.src %>index.html' 
+					}
 				}
 			},
 			clean: {
 				dist: {
-					src: ["js", "css", "img", "build"]
+					src: ["<%= cfg.js.build %>", "<%= cfg.css.build %>", "<%= cfg.img.build %>", "<%= cfg.html.build %>"]
 				}
 			}
 		});
 
 
 		grunt.registerTask('default', ['js', 'css', 'img', 'html']);
+		grunt.registerTask('start', ['clean:dist', 'default', 'watch']);
+
 		grunt.registerTask('js', ['jshint', 'uglify']);
 		grunt.registerTask('css', ['less']); //, 'replace'
 		grunt.registerTask('img', ['imagemin']);
-		grunt.registerTask('start', ['clean:dist', 'default', 'watch']);
+		grunt.registerTask('html', ['validation', 'htmlmin']);
 		
+		grunt.registerTask('show-cfg', ['show-config:cfg']);
 
-		/*grunt.registerTask('encapsulate', 'desc', function() {
-			var clean = {dist: {src: ["favicon.ico"]}};
-			grunt.config("clean", clean);
-			grunt.task.run('clean:dist');
-		});
-
-		grunt.registerTask('encapsulate2', 'desc', function() {
-			grunt.task.run('encapsulate');
-		});*/
-
-		grunt.registerTask('cfgLocal', ['cfg:local', 'show-config:cfg']);
-		grunt.registerTask('cfgProd', ['cfg:production', 'show-config:cfg']);
-
-	
-		grunt.registerTask('cfg', 'Set the env.', function(envType) {
+		
+		function createConfig() {
+			var envType = grunt.file.read("configs/env.txt");
+			grunt.log.writeln("Environment: " + envType);
 			envType = envType || 'local'; // default
 			var configFilePath;
 			var configDefaultPath = "configs/default.json";
 			var configOverridePath = "configs/override.json";
+			var cfg;
 			switch(envType)
 			{
 				case "local": configFilePath = "configs/local.json"; break;
@@ -120,99 +133,32 @@
 				case "production": configFilePath = "configs/production.json"; break;
 			}
 
+			// Defaults
 			if(grunt.file.exists(configDefaultPath))
 			{
-				grunt.config.set("cfg", grunt.file.readJSON(configDefaultPath));
+				cfg = grunt.file.readJSON(configDefaultPath);
 			}
 			else
 			{
 				grunt.fail.fatal('The ' + configDefaultPath + ' file does not exist');
 			}
 
+			// Main config
 			if(grunt.file.exists(configFilePath))
 			{
-				var main = grunt.file.readJSON(configFilePath)
-				grunt.config.set("cfg",(grunt.util._.defaults(main, grunt.config("cfg"))));
-				
-				if(grunt.file.exists(configOverridePath))
-				{
-					var overrides = grunt.file.readJSON(configOverridePath)
-					grunt.config.set("cfg",(grunt.util._.defaults(overrides, grunt.config("cfg"))));
-				}
+				cfg = grunt.util._.defaults(grunt.file.readJSON(configFilePath), cfg);
 			}
 			else
 			{
 				grunt.fail.fatal('The ' + configFilePath + ' file does not exist');
 			}
-		});
 
+			// Override configs
+			if(grunt.file.exists(configOverridePath))
+			{
+				cfg = grunt.util._.defaults(grunt.file.readJSON(configOverridePath), cfg);
+			}
 
-		//var target = grunt.option('target') || 'dev';
-		grunt.registerTask('custom', 'My "default" task description.', function() {
-			var target = grunt.option('target') || 'dev';
-			var livereload = grunt.option('livereload') || false;
-			//var clean = grunt.option('clean') || false;
-			//if(clean) grunt.task.run('clean:dist');
-		});
-		
-		grunt.registerTask('html', 'My "default" task description.', function() {
-			var validation = {
-				options: {
-					reset: grunt.option('reset') || false,
-					stoponerror: true,
-					relaxerror: ["Bad value X-UA-Compatible for attribute http-equiv on element meta."] //ignores these errors
-				},
-				files: {
-					src: ["src/index.html"]
-				}
-			};
-			grunt.config.set("validation", validation);
-			grunt.task.run('validation');
-
-			var htmlmin = {
-				dist: {
-					options: {
-						removeComments: true,
-						collapseWhitespace: true
-					},
-					files: {
-						'build/index.html': 'src/index.html' 
-					}
-				}
-			};
-			grunt.config.set("htmlmin", htmlmin);
-			grunt.task.run('htmlmin:dist');
-		});
-		
-
-		//grunt.loadTasks // Loading Externally-Defined Tasks
-
-				//grunt.file.copy(srcpath, destpath [, options])
-			//grunt.file.delete(filepath [, options])
-			//grunt.file.recurse(rootdir, callback)
-			//grunt.file.mkdir("bin-deploy", "0777");
-			//grunt.file.isMatch
-			//grunt.file.exists
-			//grunt.file.isLink
-			//grunt.file.isDir
-			//grunt.file.isFile
-
-		/*
-		grunt.event.on('watch', function(action, filepath) {
-			grunt.log.writeln('-------------------------------------------');
-			grunt.log.writeln('filepath:' + filepath);
-			//grunt.config(['imagemin', 'dist'], filepath);
-			grunt.log.writeln(grunt.config('imagemin.dist.src'));
-		});
-		
-		var changedFiles = Object.create(null);
-		var onChange = grunt.util._.debounce(function() {
-			grunt.config(['imagemin', 'dist'], Object.keys(changedFiles));
-			changedFiles = Object.create(null);
-		}, 200);
-		grunt.event.on('watch', function(action, filepath) {
-			changedFiles[filepath] = action;
-			onChange();
-		});
-		*/
+			return cfg;
+		}
 	};
